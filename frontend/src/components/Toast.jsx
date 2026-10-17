@@ -1,0 +1,32 @@
+import React, { useEffect } from 'react';
+
+export default function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => {
+      onClose();
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [toast, onClose]);
+
+  if (!toast) return null;
+
+  const icons = {
+    success: '✅',
+    error: '❌',
+    info: 'ℹ️',
+    warning: '⚠️'
+  };
+
+  return (
+    <div className={`toast-banner toast-${toast.type || 'info'}`}>
+      <span className="toast-icon">{icons[toast.type] || '🔔'}</span>
+      <span className="toast-message">{toast.message}</span>
+      <button type="button" className="toast-close-btn" onClick={onClose}>
+        ✕
+      </button>
+    </div>
+  );
+}
