@@ -1,0 +1,39 @@
+version: '3.8'
+# docker-compose.yml (Multi-Service Orchestration)
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: taskflow-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db # Supplementary 3: Named Volume
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    container_name: taskflow-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/taskdb # Service DNS name
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: taskflow-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+networks:
+  app-network:

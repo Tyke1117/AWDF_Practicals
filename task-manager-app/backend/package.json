@@ -1,0 +1,27 @@
+{
+  "name": "practical-11-backend",
+  "version": "1.0.0",
+  "description": "Practical 11 Express + Node + MongoDB Backend for Task Manager (Dockerized)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "docker",
+    "docker-compose",
+    "express",
+    "mongodb",
+    "mongoose",
+    "cors",
+    "fullstack"
+  ],
+  "author": "Pari",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1"
+  }
+}
