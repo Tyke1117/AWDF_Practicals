@@ -1,0 +1,31 @@
+{
+  "name": "practical-13-backend",
+  "version": "1.0.0",
+  "description": "Practical 13: AI API Integration into a Web Application (Express + OpenAI/Gemini + MongoDB)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test:api": "node test-api.js",
+    "test:ai": "node test-ai.js"
+  },
+  "keywords": [
+    "express",
+    "openai",
+    "gemini",
+    "mongodb",
+    "mongoose",
+    "cors",
+    "ai-integration",
+    "graceful-degradation"
+  ],
+  "author": "AWDF Student",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1",
+    "openai": "^7.23.0"
+  }
+}
