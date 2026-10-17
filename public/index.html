@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practical 9: In-Memory Caching & Query Optimization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+    h1 { font-size: 1.8rem; font-weight: 700; color: #fff; }
+    p.subtitle { color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
+    
+    /* Metrics Grid */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+    }
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .card-value.hit { color: var(--success); }
+    .card-value.miss { color: var(--danger); }
+    .card-value.time { color: var(--primary); }
+
+    /* Controls Panel */
+    .controls-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      align-items: center;
+    }
+    button {
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-warning:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--border); }
+
+    /* Latency Meter Box */
+    .latency-box {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #0f172a;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+    }
+    .hit-tag {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .miss-tag {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Content Layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* Task List Table */
+    .table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background: #151f30;
+      color: var(--muted);
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .priority-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .prio-high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+    .prio-medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+    .prio-low { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.4); }
+
+    /* Side Panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel-block {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .panel-block h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-badge {
+      display: inline-block;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      margin: 4px;
+      color: #38bdf8;
+    }
+    .logs-console {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.78rem;
+      max-height: 220px;
+      overflow-y: auto;
+      color: #a5f3fc;
+    }
+    .log-entry { margin-bottom: 6px; }
+    .log-hit { color: var(--success); }
+    .log-miss { color: var(--danger); }
+    .log-inv { color: var(--warning); }
+
+    /* Modal Form */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 440px;
+    }
+    .modal-content h2 { margin-bottom: 16px; font-size: 1.25rem; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Practical 9: In-Memory Caching & Query Optimization</h1>
+        <p class="subtitle">Demonstration Dashboard for Node-Cache, MongoDB Query Optimization & Cache Invalidation</p>
+      </div>
+      <div class="badge-pill">
+        <span class="status-dot"></span>
+        <span>node-cache (TTL: 60s)</span>
+      </div>
+    </header>
+
+    <!-- Metrics Cards -->
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">Latest Latency</div>
+        <div class="card-value time" id="metric-latency">-- ms</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;" id="metric-cache-status">Status: Waiting</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cache Hits</div>
+        <div class="card-value hit" id="metric-hits">0</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">Served from RAM</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cache Misses</div>
+        <div class="card-value miss" id="metric-misses">0</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;">Direct MongoDB Queries</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hit Ratio</div>
+        <div class="card-value" id="metric-ratio" style="color: var(--purple);">0.0%</div>
+        <div style="font-size: 0.8rem; color: var(--muted); margin-top: 4px;" id="metric-total-req">0 Total Requests</div>
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <button class="btn-primary" onclick="fetchTasks(false)">
+        <span>⚡</span> Fetch Tasks (Cached)
+      </button>
+      <button class="btn-warning" onclick="fetchTasks(true)">
+        <span>🔄</span> Fetch Uncached (Bypass Cache)
+      </button>
+      <button class="btn-primary" style="background: #059669;" onclick="openCreateModal()">
+        <span>➕</span> Add Task (Invalidates Cache)
+      </button>
+      <button class="btn-danger" onclick="clearCache()">
+        <span>🗑️</span> Flush Cache
+      </button>
+
+      <div class="latency-box">
+        <span>Response:</span>
+        <span id="header-time">0 ms</span>
+        <span id="header-badge" class="miss-tag">READY</span>
+      </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="two-col">
+      <!-- Task Table -->
+      <div class="table-container">
+        <div class="table-header">
+          <strong id="table-count-label">Tasks List (0 items)</strong>
+          <span style="font-size: 0.8rem; color: var(--muted);">Click any row to test single-item caching</span>
+        </div>
+        <div style="max-height: 520px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-table-body">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--muted); padding: 30px;">
+                  Click "Fetch Tasks" to load data from MongoDB / node-cache.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Side Monitoring Panel -->
+      <div class="side-panel">
+        <div class="panel-block">
+          <h3><span>🔑</span> Active Cache Keys</h3>
+          <div id="active-keys-container">
+            <span style="font-size: 0.85rem; color: var(--muted);">No active keys in memory</span>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <h3><span>📜</span> Real-time Event Stream</h3>
+          <div class="logs-console" id="events-log">
+            <div class="log-entry">[System] Ready to benchmark and observe caching behavior.</div>
+          </div>
+        </div>
+
+        <div class="panel-block" style="background: #111827;">
+          <h3 style="font-size: 0.9rem; color: var(--muted);">💡 Theory Quick Reference</h3>
+          <p style="font-size: 0.82rem; color: #94a3b8;">
+            <strong>Cache HIT:</strong> Data is read directly from memory (RAM) in sub-millisecond to ~10ms speed.<br/><br/>
+            <strong>Cache MISS:</strong> Server executes MongoDB query over socket, then stores response in RAM with a 60s TTL.<br/><br/>
+            <strong>Cache Invalidation:</strong> On any POST/PUT/DELETE, keys are evicted immediately to eliminate stale reads.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Task Modal -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal-content">
+      <h2>Add New Task</h2>
+      <div class="form-group">
+        <label>Task Title *</label>
+        <input type="text" id="new-task-title" placeholder="e.g. Implement Redis for Cluster Scaling" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="new-task-desc" placeholder="Details or notes..." />
+      </div>
+      <div class="form-group">
+        <label>Priority</label>
+        <select id="new-task-priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="closeCreateModal()">Cancel</button>
+        <button class="btn-primary" onclick="submitCreateTask()">Create & Invalidate Cache</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function updateStats() {
+      try {
+        const res = await fetch('/tasks/cache/stats');
+        const json = await res.json();
+        if (json.success) {
+          const { metrics, activeKeys } = json.data;
+          document.getElementById('metric-hits').textContent = metrics.hits;
+          document.getElementById('metric-misses').textContent = metrics.misses;
+          document.getElementById('metric-ratio').textContent = metrics.hitRatio;
+          document.getElementById('metric-total-req').textContent = `${metrics.totalRequests} Total Requests`;
+
+          // Active keys
+          const keysContainer = document.getElementById('active-keys-container');
+          if (activeKeys.length === 0) {
+            keysContainer.innerHTML = '<span style="font-size: 0.85rem; color: var(--muted);">No active keys in memory</span>';
+          } else {
+            keysContainer.innerHTML = activeKeys.map(k => `<span class="key-badge">${k}</span>`).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Error updating stats:', err);
+      }
+    }
+
+    function addLog(text, type = 'info') {
+      const logContainer = document.getElementById('events-log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type === 'hit' ? 'log-hit' : type === 'miss' ? 'log-miss' : 'log-inv'}`;
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${text}`;
+      logContainer.prepend(entry);
+    }
+
+    async function fetchTasks(bypassCache = false) {
+      const url = bypassCache ? '/tasks?nocache=true' : '/tasks';
+      const start = performance.now();
+      
+      try {
+        const res = await fetch(url);
+        const duration = (performance.now() - start).toFixed(2);
+        const cacheHeader = res.headers.get('X-Cache') || 'MISS';
+        const tasks = await res.json();
+
+        // Update UI Latency Display
+        document.getElementById('metric-latency').textContent = `${duration} ms`;
+        document.getElementById('header-time').textContent = `${duration} ms`;
+        document.getElementById('metric-cache-status').textContent = `Cache: ${cacheHeader} (${bypassCache ? 'Bypassed' : 'Standard'})`;
+
+        const badge = document.getElementById('header-badge');
+        badge.textContent = `CACHE ${cacheHeader}`;
+        badge.className = cacheHeader === 'HIT' ? 'hit-tag' : 'miss-tag';
+
+        addLog(`GET /tasks -> ${cacheHeader} in ${duration}ms (${tasks.length} items)`, cacheHeader.toLowerCase());
+
+        renderTasks(tasks);
+        await updateStats();
+      } catch (err) {
+        alert('Failed to fetch tasks: ' + err.message);
+      }
+    }
+
+    function renderTasks(tasks) {
+      const tbody = document.getElementById('tasks-table-body');
+      document.getElementById('table-count-label').textContent = `Tasks List (${tasks.length} items)`;
+      
+      if (!tasks || tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--muted); padding: 20px;">No tasks found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = tasks.slice(0, 15).map(task => `
+        <tr onclick="fetchSingleTask('${task._id}')" style="cursor: pointer;" title="Click to test single-item caching">
+          <td>
+            <strong>${task.title}</strong>
+            <div style="font-size: 0.78rem; color: var(--muted);">${task._id}</div>
+          </td>
+          <td><span class="priority-badge prio-${task.priority || 'medium'}">${task.priority || 'medium'}</span></td>
+          <td>${task.completed ? '✅ Done' : '⏳ Pending'}</td>
+          <td>
+            <button class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" onclick="event.stopPropagation(); deleteTask('${task._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function fetchSingleTask(id) {
+      const start = performance.now();
+      try {
+        const res = await fetch(`/tasks/${id}`);
+        const duration = (performance.now() - start).toFixed(2);
+        const cacheHeader = res.headers.get('X-Cache') || 'MISS';
+        const task = await res.json();
+
+        addLog(`GET /tasks/${id.slice(-6)} -> ${cacheHeader} in ${duration}ms`, cacheHeader.toLowerCase());
+        await updateStats();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function openCreateModal() {
+      document.getElementById('create-modal').style.display = 'flex';
+      document.getElementById('new-task-title').focus();
+    }
+
+    function closeCreateModal() {
+      document.getElementById('create-modal').style.display = 'none';
+      document.getElementById('new-task-title').value = '';
+      document.getElementById('new-task-desc').value = '';
+    }
+
+    async function submitCreateTask() {
+      const title = document.getElementById('new-task-title').value.trim();
+      const description = document.getElementById('new-task-desc').value.trim();
+      const priority = document.getElementById('new-task-priority').value;
+
+      if (!title) {
+        alert('Please enter a task title');
+        return;
+      }
+
+      try {
+        const res = await fetch('/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description, priority })
+        });
+        const data = await res.json();
+        
+        closeCreateModal();
+        addLog(`POST /tasks -> Cache Invalidated! ("all_tasks" evicted)`, 'inv');
+        await updateStats();
+        // Fetch fresh tasks list
+        await fetchTasks(false);
+      } catch (err) {
+        alert('Failed to create task: ' + err.message);
+      }
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Are you sure you want to delete this task? Cache will be invalidated.')) return;
+
+      try {
+        const res = await fetch(`/tasks/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        addLog(`DELETE /tasks/${id.slice(-6)} -> Cache Invalidated! ("all_tasks" & "task_${id.slice(-6)}" evicted)`, 'inv');
+        await updateStats();
+        await fetchTasks(false);
+      } catch (err) {
+        alert('Failed to delete task: ' + err.message);
+      }
+    }
+
+    async function clearCache() {
+      try {
+        const res = await fetch('/tasks/cache/clear', { method: 'POST' });
+        addLog(`POST /tasks/cache/clear -> All keys flushed and stats reset`, 'inv');
+        await updateStats();
+      } catch (err) {
+        alert('Failed to clear cache: ' + err.message);
+      }
+    }
+
+    // Initial load
+    updateStats();
+    fetchTasks(false);
+  </script>
+</body>
+</html>
