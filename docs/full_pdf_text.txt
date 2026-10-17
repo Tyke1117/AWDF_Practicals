@@ -1,0 +1,293 @@
+=== PAGE 1 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+1 
+ 
+ 
+CHAROTAR UNIVERSITY OF SCIENCE & TECHNOLOGY 
+DEVANG PATEL INSTITUTE OF ADVANCE TECHNOLOGY & RESEARCH 
+Department of Information Technology 
+Subject Name: Advance Web Development Framework 
+Semester: V 
+Subject Code: ITUE301 
+Practical File 
+ 
+ 
+
+
+=== PAGE 2 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+2 
+PRACTICAL-12 
+Problem Statement: 
+•  Set up a GitHub Actions workflow for the Task Management application that runs automatically 
+on every push to the main branch. 
+•  The pipeline must install dependencies (npm install) as a defined step. 
+•  The pipeline must run at least one automated test and report a clear pass/fail status. 
+•  Demonstrate a failed pipeline caused by a deliberately broken test. 
+•  Demonstrate a fixed pipeline that passes after the test is corrected. 
+File Structure: 
+ 
+ 
+ 
+
+
+=== PAGE 3 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+3 
+System Architecture: CI/CD Pipeline Lifecycle with GitHub Actions 
+CONTINUOUS INTEGRATION (CI) AUTOMATION PIPELINE ARCHITECTURE: 
++-----------------------------------------------------------------------------------+ 
+|  DEVELOPER COMMIT / PULL REQUEST (git push origin main | pull_request)            | 
++-----------------------------------------------------------------------------------+ 
+                                  │ 
+                                  ▼ 
++-----------------------------------------------------------------------------------+ 
+|  GITHUB ACTIONS EVENT TRIGGER ENGINE (Workflow: .github/workflows/ci.yml)         | 
++-----------------------------------------------------------------------------------+ 
+                                  │ 
+                                  ▼ 
++-----------------------------------------------------------------------------------+ 
+|  JOB 1: lint (Code Quality & Syntax Validation on ubuntu-latest)                  | 
+|  ├── actions/checkout@v4 ──▶ actions/setup-node@v4 (Node 18)                      | 
+|  └── run: node -c server.js controllers/*.js models/*.js routes/*.js              | 
++-----------------------------------------------------------------------------------+ 
+                                  │ (needs: lint) 
+                                  ▼ 
++-----------------------------------------------------------------------------------+ 
+|  JOB 2: build-and-test (Automated Test Suite on ubuntu-latest)                    | 
+|  ├── Step 1: actions/checkout@v4                                                  | 
+|  ├── Step 2: actions/setup-node@v4 (node-version: 18)                             | 
+|  ├── Step 3: run: npm install (Deterministic Dependency Installation)             | 
+|  └── Step 4: run: npm test (Jest API Test Execution & Supertest Assertions)       | 
++-----------------------------------------------------------------------------------+ 
+                                  │ 
+                 ┌────────────────┴────────────────┐ 
+                 ▼                                 ▼ 
+       [ PIPELINE PASSED: Exit 0 ]       [ PIPELINE FAILED: Exit 1 ] 
+   ├── All 3 Jest API tests pass      ├── Assertion failure in broken.test.js 
+   ├── Green Checkmark (✓) in GitHub  ├── Red X (✕) status on commit & PR 
+   └── Badge: build | passing         └── Deployment blocked automatically 
+ 
+ 
+
+
+=== PAGE 4 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+4 
+1. GitHub Actions CI Workflow Specification (.github/workflows/ci.yml) 
+ 
+2. Automated API Test Suite (backend/tests/task.test.js) 
+ 
+ 
+ 
+
+
+=== PAGE 5 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+5 
+3. Automated Test Execution - Passing Test Suite (PowerShell / Jest CLI): 
+ 
+4. GitHub Actions Web Interface - Passed Pipeline Run (Green Checkmark): 
+ 
+GitHub Actions - Run #42 completed successfully with all steps passing in 42s (Green Checkmark). 
+ 
+ 
+
+
+=== PAGE 6 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+6 
+5. Deliberately Broken Test Execution (Simulating Regression Failure): 
+ 
+6. GitHub Actions Web Interface - Failed Pipeline Run (Red X Alert): 
+ 
+GitHub Actions - Run #41 failed at 'Run automated API test suite' step with exit code 1 (Red X). 
+ 
+ 
+
+
+=== PAGE 7 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+7 
+7. Full Browser Task Manager Dashboard (TaskFlow Pro with Active CI Badge): 
+ 
+TaskFlow Pro - Real-time dashboard showing live CI Pipeline status badge in header. 
+Supplementary Problems:- 
+Problem 1: Code Quality & Syntax Validation Job (lint) 
+•  • Files: .github/workflows/ci.yml and backend/package.json 
+•  • Concept: Implements a standalone lint job running in parallel or preceding build-and-test. Uses 
+Node syntax evaluation (node -c) to detect syntax defects prior to test execution, saving runner 
+compute minutes. 
+ 
+ 
+ 
+
+
+=== PAGE 8 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+8 
+Problem 2: Pull Request Pipeline Trigger & Interactive CI Telemetry Hub 
+•  • Files: .github/workflows/ci.yml (pull_request trigger) and PipelineModal.jsx 
+•  • Concept: Configured the workflow to run automatically whenever a Pull Request targets the main 
+branch. Connected with a responsive React modal in TaskFlow Pro displaying step timings, runner 
+metadata, and log toggles. 
+Pipeline Step 
+Execution Target 
+Average Duration 
+Failure Behavior 
+1. Code Quality (lint) 
+node -c syntax check 
+8 seconds 
+Blocks test execution; halts PR 
+merge 
+2. Dependency Install 
+npm install / npm ci 
+18 seconds 
+Fails if dependencies are 
+unresolvable 
+3. Automated Tests 
+npm test (Jest/Supertest) 
+12 seconds 
+Fails on broken assertion; flags 
+Red X 
+Interactive CI/CD Pipeline Modal UI (TaskFlow Pro): 
+ 
+Supplementary Problem 2 - Interactive modal in TaskFlow Pro displaying step timings, runner metadata, and 
+passed/failed logs. 
+ 
+ 
+
+
+=== PAGE 9 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+9 
+Problem 3: Dynamic Pipeline Status Badge & CI/CD Lifecycle 
+•  • Files: README.md and .github/workflows/ci.yml 
+•  • Concept: Integrated an official GitHub Actions status badge into the project README. The 
+badge dynamically reflects the real-time health of the main branch (passing or failing), providing 
+immediate public visibility into build stability. 
+Continuous Integration vs. Continuous Deployment Lifecycle Matrix: 
+Dimension 
+Continuous Integration (CI - This Lab) 
+Continuous Deployment (CD) 
+Primary Goal 
+Automatically build and test code on every 
+push 
+Automatically deploy passing code to 
+production 
+Key Tools 
+GitHub Actions, Jest, Supertest, Linters 
+Docker Compose, Kubernetes, AWS/Azure 
+ECS 
+Trigger Event 
+git push origin main, pull_request 
+Successful completion of CI test suite on main 
+Artifact Produced 
+Test reports, coverage metrics, status badge 
+Running containers, live staging/prod 
+environments 
+ 
+ 
+
+
+=== PAGE 10 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+10 
+Key Questions & Technical Analysis 
+Q1: What is the difference between Continuous Integration and Continuous Deployment, and 
+which one does this practical actually demonstrate? 
+Answer: Continuous Integration (CI) is the practice of automatically integrating code changes from multiple 
+developers into a shared repository several times a day. Each integration is verified by an automated build and 
+test suite to detect integration bugs as quickly as possible. Continuous Deployment (CD) is the next phase, 
+where code that passes all automated tests is automatically packaged (e.g., Docker containerized) and deployed 
+directly into production environments without human intervention. This practical specifically implements and 
+demonstrates Continuous Integration (CI), as the GitHub Actions pipeline automates dependency installation, 
+linting, and automated Jest API testing on every push and pull request, reporting a pass/fail verification status. 
+Q2: Why does running tests automatically on every push catch problems earlier than testing 
+manually before a release? 
+Answer: Manual testing conducted shortly before a release suffers from extensive latency and large changeset 
+scope. When a bug is discovered in a multi-week release cycle, developers must sift through hundreds of 
+commits to locate the root cause, leading to expensive debugging delays and release postponements. In 
+contrast, automated CI testing on every push creates an immediate feedback loop: any regression is isolated to 
+the specific commit or pull request that introduced it (within 40 seconds). This drastically lowers the cost of 
+fixing defects, prevents bad code from compounding across team branches, and ensures the main branch 
+remains perpetually deployable. 
+Q3: What would happen to the pipeline if the test file path were incorrect—would the workflow fail 
+at the same step as a genuine test failure? 
+Answer: If the test file path is incorrect or missing, the workflow will still fail at the exact same step (Run 
+Automated Tests / npm test), because Jest exits with a non-zero exit code when no matching test files are 
+discovered or if a syntax error prevents test compilation. However, the diagnostic output in the GitHub Actions 
+runner log differs fundamentally: a genuine test failure outputs a detailed assertion diff (e.g., Expected: 200, 
+Received: 500) pointing to a specific line in the test file, whereas a file path error outputs 'No tests found' or 
+'Cannot find module'. Both halt the pipeline, but require distinct troubleshooting approaches. 
+ 
+ 
+
+
+=== PAGE 11 ===
+ITUE301 Advanced Web Development FrameWorks                                                                               24DIT066 
+11 
+Summary of Implemented Modules & Performance Evidence 
+Section 
+Code Included 
+Performance Evidence / Output 
+CI Workflow Spec 
+.github/workflows/ci.yml 
+YAML workflow with triggers, jobs, and 
+steps 
+Automated Test Suite 
+backend/tests/task.test.js 
+Jest & Supertest validating API routes & 
+validation 
+Passing Run Demo 
+npm test (task.test.js) 
+3 passed, 3 total | Exit code 0 (Green 
+Checkmark) 
+Failing Run Demo 
+npm test (broken.test.js) 
+1 failed | Assertion error | Exit code 1 
+(Red X) 
+GitHub Actions UI 
+Actions Dashboard 
+Run #42 (Passed in 42s) vs Run #41 
+(Failed in 18s) 
+Frontend Dashboard 
+TaskFlow Pro (Port 5173) 
+Live web UI with CI Pipeline passing 
+status badge 
+Supplementary 1 
+lint Job (node -c) 
+Automated code quality & syntax 
+validation step 
+Supplementary 2 
+pull_request Trigger & Modal 
+Automated PR testing + interactive 
+telemetry modal 
+Supplementary 3 
+Dynamic Status Badge 
+SVG status badge embedded in project 
+README 
+Conclusion 
+In this practical, an automated Continuous Integration (CI) pipeline was successfully designed, implemented, and 
+verified for the full-stack Task Management application using GitHub Actions, Node.js, Express.js, Jest, and 
+Supertest. 
+ 
+Key development milestones and findings achieved include: 
+1. Automated Workflow Architecture: Created .github/workflows/ci.yml configured to trigger automatically on 
+every push and pull request targeting the main branch. 
+2. Multi-Job Pipeline: Implemented a two-stage job pipeline comprising code quality/syntax validation (lint) and 
+automated API test execution (build-and-test) running on ubuntu-latest. 
+3. Automated API Test Suite: Authored comprehensive Jest/Supertest suites validating root health endpoints, input 
+validation middleware (400 Bad Request rejection), and event diagnostics with 100% pass rate. 
+4. Empirical Fault Diagnosis: Deliberately induced a test assertion mismatch (broken.test.js), demonstrating the 
+pipeline immediately catching the defect, halting execution with exit code 1, and displaying a Red X failure on 
+GitHub. 
+5. Regression Correction: Fixed the assertion error, demonstrating the pipeline turning green (exit code 0) and 
+updating the dynamic README status badge to passing. 
+6. Frontend CI Observability: Embedded an interactive PipelineModal in TaskFlow Pro, allowing developers to 
+inspect real-time runner metadata, job execution durations, and step logs. 
+ 
+All practical objectives, supplementary problems, and architectural analyses were successfully implemented, tested, 
+and validated. 
+
+

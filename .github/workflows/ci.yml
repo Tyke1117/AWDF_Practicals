@@ -1,0 +1,55 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ========================================================
+  # Supplementary Problem 1: Code Quality & Syntax Validation
+  # ========================================================
+  lint:
+    name: Code Quality & Syntax Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Backend Dependencies & Validate Syntax
+        run: |
+          cd task-manager-app/backend
+          npm install
+          node -c server.js config/*.js
+
+  # ========================================================
+  # Primary Lab Job: Build and Automated Testing
+  # ========================================================
+  build-and-test:
+    name: Build & Run Automated Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: |
+          cd task-manager-app/backend
+          npm install
+
+      - name: Run Automated Tests
+        run: |
+          cd task-manager-app/backend
+          npm test

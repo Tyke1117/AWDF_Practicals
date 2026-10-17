@@ -1,0 +1,20 @@
+{
+  "name": "practical-12-backend",
+  "version": "1.0.0",
+  "description": "Task Management REST API with Jest, Supertest and GitHub Actions CI Pipeline",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest tests/task.test.js --runInBand --detectOpenHandles --forceExit",
+    "test:broken": "jest tests/broken.test.js --forceExit",
+    "lint": "node -c server.js controllers/*.js routes/*.js config/*.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
