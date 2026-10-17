@@ -1,0 +1,83 @@
+{
+  "practical": "Practical 8: Performance Optimization and Lazy Loading in React",
+  "courseOutcome": "CO1 (Frontend Performance Optimization) / PO3, PO5",
+  "benchmarkedAt": "2026-09-24T17:55:00.000Z",
+  "buildTool": "Vite 5.4.21",
+  "framework": "React 18.2.0",
+  "baseline": {
+    "description": "Monolithic single-bundle architecture before code splitting",
+    "bundleFile": "index.baseline-Da8pL3bp.js",
+    "rawBytes": 380630,
+    "rawKilobytes": "371.71 kB",
+    "gzipBytes": 126116,
+    "gzipKilobytes": "123.16 kB",
+    "chunksCount": 1,
+    "loadTimeNoThrottle": "42 ms",
+    "loadTimeSlow3G": "2480 ms",
+    "domContentLoadedSlow3G": "2850 ms"
+  },
+  "optimized": {
+    "description": "Route-based code splitting using React.lazy() and Suspense",
+    "initialPayload": {
+      "chunks": ["index-BD-O7hB4.js", "router-vendor-DF0nzGdQ.js", "Home-DBrLojNi.js", "api-BqO9kT71.js"],
+      "rawKilobytes": "190.63 kB",
+      "gzipKilobytes": "62.36 kB",
+      "loadTimeNoThrottle": "21 ms",
+      "loadTimeSlow3G": "1260 ms",
+      "reductionPercentageRaw": "48.7%",
+      "reductionPercentageGzip": "49.4%"
+    },
+    "lazyChunks": [
+      {
+        "route": "/projects",
+        "file": "Projects-BjB1j2fR.js",
+        "rawKilobytes": "2.39 kB",
+        "gzipKilobytes": "0.93 kB",
+        "fetchLatencySlow3G": "180 ms"
+      },
+      {
+        "route": "/analytics",
+        "file": "Analytics-Dvpvn_CN.js",
+        "rawKilobytes": "4.28 kB",
+        "gzipKilobytes": "1.52 kB",
+        "fetchLatencySlow3G": "220 ms"
+      },
+      {
+        "route": "/contact",
+        "file": "Contact-CWGrJOAs.js",
+        "rawKilobytes": "3.96 kB",
+        "gzipKilobytes": "1.38 kB",
+        "fetchLatencySlow3G": "210 ms"
+      },
+      {
+        "component": "HeavyChart (Supplementary 1)",
+        "file": "HeavyChart-BUNiBAtM.js",
+        "rawKilobytes": "2.45 kB",
+        "gzipKilobytes": "1.04 kB"
+      },
+      {
+        "vendor": "Chart.js vendor library (Supplementary 1)",
+        "file": "chart-vendor-ByOaxVB5.js",
+        "rawKilobytes": "172.27 kB",
+        "gzipKilobytes": "60.25 kB",
+        "deferredSavings": "Deferred ~172 kB from initial bundle"
+      }
+    ]
+  },
+  "profilerExperiment": {
+    "component": "TaskItem.jsx",
+    "trigger": "Parent search query typing (Keystroke updates in Home.jsx)",
+    "unoptimized": {
+      "rendersPerKeystroke": 5,
+      "totalWastedRendersFor10Chars": 50,
+      "renderDuration": "3.2 ms per update cycle",
+      "cause": "Parent re-rendered without React.memo / unstable function references"
+    },
+    "optimized": {
+      "rendersPerKeystroke": 0,
+      "totalWastedRendersFor10Chars": 0,
+      "renderDuration": "<0.1 ms",
+      "solution": "React.memo on TaskItem + useCallback on handler functions"
+    }
+  }
+}

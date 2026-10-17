@@ -1,0 +1,13 @@
+{
+  "name": "practical-8-root",
+  "version": "1.0.0",
+  "description": "Practical 8: Performance Optimization and Lazy Loading in React",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run start",
+    "build": "npm --prefix frontend run build",
+    "build:baseline": "npm --prefix frontend run build:baseline",
+    "compare": "npm --prefix frontend run compare"
+  }
+}
